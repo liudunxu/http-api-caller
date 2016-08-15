@@ -5,6 +5,9 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.dundun.api.ApiResultResolver;
 import com.dundun.api.json.GsonDateAdapter;
 import com.dundun.api.utils.ApiObjectUtils;
@@ -22,6 +25,17 @@ import com.dundun.api.utils.GenericUtils;
  * author: liudunxu
  */
 public class ApiResultJsonResovler implements ApiResultResolver {
+
+    static boolean useFastJson = false;
+
+    static {
+        try {
+            ApiResultJsonResovler.class.getClassLoader().loadClass("com.alibaba.fastjson.JSONObject");
+            useFastJson = true;
+        } catch (Throwable throwable) {
+            useFastJson = false;
+        }
+    }
 
     // gson转换工具
     static final Gson GSON =
@@ -50,6 +64,15 @@ public class ApiResultJsonResovler implements ApiResultResolver {
         // 如果是jsonArray
         else if (JsonArray.class.equals(requiredType)) {
             return jsonElement.getAsJsonArray();
+        }
+
+        if (useFastJson) {
+            if (JSONObject.class.equals(requiredType)) {
+                return JSON.parseObject(apiInvocation.getRawResult(), requiredType);
+            }
+            if (JSONArray.class.equals(requiredType)) {
+                return JSON.parseArray(apiInvocation.getRawResult());
+            }
         }
 
         Class<?>[] genericTypes = GenericUtils.getActualClass(apiInvocation.getGenericReturnType());
